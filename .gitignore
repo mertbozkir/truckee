@@ -1,0 +1,25 @@
+runs/
+.mypy_cache/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+.ruff_cache/
+.claude
+.venv/
+debug_plates
+outputs/
+runs/
+train-data/
+Truck Number Plate/
+
+uploads/
+
+data.db
+
+license_plate_detector.pt
+yolov8n.pt
+yolov8m.pt

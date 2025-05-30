@@ -1,0 +1,26 @@
+# Vehicle License Plate Detection System
+
+This project aims to develop a vehicle gate license plate recognition system. The system detects the type of approaching vehicle (truck/trailer or other) and its license plate. If the vehicle is a truck/trailer and its plate is registered in the database, a gate is opened via Arduino. If a different vehicle type is detected, a warning is given through a buzzer via Arduino. 
+
+The project is designed as a Flask-based mobile application (or a version that works with phone camera on PC) and will have an interface that includes live camera feed and detection alerts. Additionally, there will be an interface page where license plates can be pre-registered.
+
+## Required Components:
+
+**Image Processing and Machine Learning:**
+- Vehicle detection (truck/trailer classification) and license plate detection/reading using trained models (OpenCV, TensorFlow, PyTorch).
+- A dataset of labeled truck, other vehicle, and license plate images for training.
+
+**Web Framework:**
+- Flask: To create the interface and backend logic for mobile or PC-based application.
+
+**Hardware Control:**
+- Arduino: To control the gate opening mechanism and warning buzzer.
+
+**Database:** ✅
+- To store and query registered license plates (SQLite, PostgreSQL, or simple file-based system). 
+
+
+1. if a car/truck detected. give this detected image to the 2nd
+2. plate detection model will figure it out the contour of the plate! 
+3. easyocr will do the job to get the plate! for this vehicle! 
+4. contour colour will be based on whether it's a registered plate or not!

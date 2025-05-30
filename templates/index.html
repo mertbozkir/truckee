@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Gate System</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+        }
+        .main-content {
+            flex: 1;
+            margin-left: 320px;
+            padding: 0;
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 { 
+            color: white; 
+            margin-bottom: 30px; 
+            font-size: 1.8em; 
+            text-align: center;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 15px;
+        }
+        h2 { 
+            color: #333; 
+            margin-bottom: 20px; 
+            font-size: 1.5em;
+        }
+        .sidebar h2 {
+            color: white;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .camera-section { 
+            background: #111; 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .controls-bar { 
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            display: flex; 
+            gap: 15px; 
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        .controls { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center;
+        }
+        button { 
+            padding: 12px 20px; border: none; border-radius: 8px; 
+            cursor: pointer; font-weight: 600; transition: all 0.3s;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white; font-size: 14px;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .plate-form { 
+            background: rgba(255,255,255,0.1); 
+            padding: 25px; 
+            border-radius: 10px; 
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .form-row { 
+            display: flex; 
+            flex-direction: column;
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        input, select { 
+            padding: 12px; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            border-radius: 8px; 
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        input::placeholder { color: rgba(255,255,255,0.7); }
+        select option { background: #667eea; color: white; }
+        .plate-list { margin-top: 20px; }
+        .plate-item { 
+            background: rgba(255,255,255,0.1); 
+            padding: 12px; 
+            margin: 8px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid #fff;
+            font-size: 14px;
+        }
+        .plate-item.registered { border-left-color: #4CAF50; }
+        .plate-item.unregistered { border-left-color: #f44336; }
+        #video-feed { 
+            width: 100%; 
+            height: calc(100vh - 80px);
+            object-fit: contain;
+            background: #000;
+        }
+        .video-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            position: relative;
+        }
+        .processing-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .progress-bar {
+            width: 300px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .upload-area { 
+            border: 3px dashed #667eea; 
+            padding: 30px; 
+            text-align: center; 
+            margin: 15px 0; 
+            border-radius: 10px; 
+            background: rgba(102,126,234,0.1);
+            transition: all 0.3s;
+        }
+        .upload-area:hover { background: rgba(102,126,234,0.2); }
+        .status { 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+        .status.success { 
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .status.error { 
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb); 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            max-width: 400px;
+        }
+        .camera-selector {
+            margin-bottom: 15px;
+        }
+        .detection-stats {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>Vehicle Gate System</h1>
+            
+            <div class="plate-form">
+                <h2>Register Plate</h2>
+                <div class="form-row">
+                    <input type="text" id="plate-input" placeholder="Enter plate number" maxlength="10">
+                    <select id="vehicle-type">
+                        <option value="truck">Truck/Trailer</option>
+                        <option value="other">Other Vehicle</option>
+                    </select>
+                    <button onclick="addPlate()">Add Plate</button>
+                </div>
+            </div>
+            
+            <div class="plate-list">
+                <h2>Registered Plates</h2>
+                <div id="plates-container"></div>
+            </div>
+            
+            <div class="detection-stats">
+                <h2>Live Detection Stats</h2>
+                <div id="detection-stats">
+                    <div>🎯 Total Detections: <span id="total-detections">0</span></div>
+                    <div>✅ Registered: <span id="registered-count">0</span></div>
+                    <div>❌ Unregistered: <span id="unregistered-count">0</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="camera-section">
+                <div class="controls-bar">
+                    <div class="camera-selector">
+                        <label style="color: white; margin-right: 10px;">Camera:</label>
+                        <select id="camera-select" style="background: #333; color: white; border: none; padding: 8px; border-radius: 4px;">
+                            <option value="">Detecting cameras...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="startCamera()">🎥 Start Camera</button>
+                        <button onclick="stopProcessing()">⏹️ Stop</button>
+                        <button onclick="document.getElementById('video-upload').click()">📹 Upload Video</button>
+                        <input type="file" id="video-upload" accept="video/*" style="display:none;">
+                        
+                        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                            <label style="color: white; font-size: 14px;">🧪 Test Image:</label>
+                            <input type="file" id="test-image-input" accept="image/*" style="background: #333; color: white; border: none; padding: 6px; border-radius: 4px; font-size: 12px;">
+                            <button onclick="testImage()" style="padding: 8px 15px; font-size: 13px;">Analyze Image</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="video-container">
+                    <img id="video-feed" src="" style="display:none;">
+                    
+                    <div id="processing-overlay" class="processing-overlay" style="display:none;">
+                        <div id="processing-text">🔄 Initializing...</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div id="progress-text">Please wait...</div>
+                    </div>
+                    
+                    <div id="test-results" style="position: absolute; top: 90px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 8px; max-width: 300px; font-size: 12px; display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let totalDetections = 0;
+        let registeredCount = 0;
+        let unregisteredCount = 0;
+        
+        function loadCameras() {
+            fetch('/get_cameras')
+                .then(response => response.json())
+                .then(cameras => {
+                    const select = document.getElementById('camera-select');
+                    select.innerHTML = '';
+                    if (cameras.length === 0) {
+                        select.innerHTML = '<option value="">No cameras found</option>';
+                    } else {
+                        cameras.forEach(camera => {
+                            const option = document.createElement('option');
+                            option.value = camera.index;
+                            option.textContent = camera.name;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => console.error('Error loading cameras:', err));
+        }
+        
+        function updateProcessingStatus() {
+            fetch('/get_status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusIndicator = document.getElementById('status-indicator');
+                    const processingOverlay = document.getElementById('processing-overlay');
+                    const processingText = document.getElementById('processing-text');
+                    const progressFill = document.getElementById('progress-fill');
+                    const progressText = document.getElementById('progress-text');
+                    
+                    statusIndicator.textContent = `Status: ${data.status}`;
+                    
+                    if (data.status === 'initializing' || data.status === 'loading_video' || data.status === 'processing_video') {
+                        processingOverlay.style.display = 'block';
+                        
+                        if (data.status === 'initializing') {
+                            processingText.textContent = '🔄 Initializing camera...';
+                            progressText.textContent = 'Setting up detection system (~15 seconds)';
+                            progressFill.style.width = '30%';
+                        } else if (data.status === 'loading_video') {
+                            processingText.textContent = '📹 Loading video...';
+                            progressText.textContent = 'Preparing video for processing...';
+                            progressFill.style.width = '50%';
+                        } else if (data.status === 'processing_video') {
+                            processingText.textContent = '🤖 Processing video with AI...';
+                            const progress = data.progress || 0;
+                            progressFill.style.width = progress + '%';
+                            progressText.textContent = `${Math.round(progress)}% complete (${data.frame_count}/${data.total_frames} frames)`;
+                        }
+                    } else {
+                        processingOverlay.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Status check failed:', err));
+        }
+        
+        function startCamera() {
+            const cameraIndex = document.getElementById('camera-select').value;
+            if (!cameraIndex) {
+                showStatusMessage('Please select a camera first', 'error');
+                return;
+            }
+            
+            document.getElementById('processing-overlay').style.display = 'block';
+            
+            fetch('/start_camera', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ camera_index: parseInt(cameraIndex) })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showStatusMessage(data.error, 'error');
+                        document.getElementById('processing-overlay').style.display = 'none';
+                    } else {
+                        // Wait for initialization then show video
+                        setTimeout(() => {
+                            const videoFeed = document.getElementById('video-feed');
+                            videoFeed.src = '/video_feed?t=' + Date.now();
+                            videoFeed.style.display = 'block';
+                            document.getElementById('processing-overlay').style.display = 'none';
+                            showStatusMessage('Camera started successfully!');
+                        }, 2000);
+                    }
+                })
+                .catch(err => {
+                    showStatusMessage('Error starting camera', 'error');
+                    document.getElementById('processing-overlay').style.display = 'none';
+                });
+        }
+        
+        function stopProcessing() {
+            fetch('/stop_processing', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('video-feed').style.display = 'none';
+                    console.log(data.status);
+                });
+        }
+        
+        function addPlate() {
+            const plateNumber = document.getElementById('plate-input').value.trim();
+            const vehicleType = document.getElementById('vehicle-type').value;
+            
+            if (!plateNumber) {
+                showStatus('Please enter a plate number', 'error');
+                return;
+            }
+            
+            fetch('/add_plate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plate_number: plateNumber,
+                    vehicle_type: vehicleType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(data.error, 'error');
+                } else {
+                    showStatus('Plate added successfully!');
+                    document.getElementById('plate-input').value = '';
+                    loadPlates();
+                }
+            })
+            .catch(err => showStatus('Error adding plate', 'error'));
+        }
+        
+        function showStatusMessage(message, type = 'success') {
+            // Create notification container if it doesn't exist
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = `status ${type}`;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: none; border: none; color: inherit; font-size: 16px; cursor: pointer; margin-left: 10px;">×</button>
+                </div>
+            `;
+            
+            // Add to container
+            container.appendChild(notification);
+            
+            // Auto remove after 5 seconds (longer for upload messages)
+            const autoRemoveTime = message.includes('Upload') || message.includes('Processing') ? 8000 : 4000;
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, autoRemoveTime);
+        }
+        
+        function updateStats() {
+            document.getElementById('total-detections').textContent = totalDetections;
+            document.getElementById('registered-count').textContent = registeredCount;
+            document.getElementById('unregistered-count').textContent = unregisteredCount;
+        }
+        
+        function deletePlate(plateNumber) {
+            if (!confirm(`Delete plate "${plateNumber}"?`)) {
+                return;
+            }
+            
+            fetch('/delete_plate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plate_number: plateNumber })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatusMessage(data.error, 'error');
+                } else {
+                    showStatusMessage('Plate deleted successfully!', 'success');
+                    loadPlates();
+                }
+            })
+            .catch(err => showStatusMessage('Error deleting plate', 'error'));
+        }
+        
+        function loadPlates() {
+            fetch('/get_plates')
+                .then(response => response.json())
+                .then(plates => {
+                    const container = document.getElementById('plates-container');
+                    if (plates.length === 0) {
+                        container.innerHTML = '<div class="plate-item">No plates registered yet</div>';
+                    } else {
+                        container.innerHTML = plates.map(plate => 
+                            `<div class="plate-item registered" style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div><strong>${plate.plate_number}</strong></div>
+                                    <div style="font-size: 12px; opacity: 0.8;">${plate.vehicle_type}</div>
+                                </div>
+                                <button onclick="deletePlate('${plate.plate_number}')" 
+                                        style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                                    🗑️
+                                </button>
+                            </div>`
+                        ).join('');
+                    }
+                })
+                .catch(err => showStatusMessage('Error loading plates', 'error'));
+        }
+        
+        // Video upload handling
+        document.getElementById('video-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Show upload notification
+                showStatusMessage(`📤 Starting upload: ${file.name}`, 'success');
+                
+                // Show processing overlay immediately
+                const processingOverlay = document.getElementById('processing-overlay');
+                const processingText = document.getElementById('processing-text');
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+                
+                processingOverlay.style.display = 'block';
+                processingText.textContent = '📤 Uploading video...';
+                progressFill.style.width = '10%';
+                progressText.textContent = `Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+                
+                const formData = new FormData();
+                formData.append('video', file);
+                
+                // Create upload progress tracking
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = (10 + percentComplete * 0.4) + '%'; // 10-50% for upload
+                        progressText.textContent = `Uploading... ${Math.round(percentComplete)}% (${(e.loaded / 1024 / 1024).toFixed(1)}/${(e.total / 1024 / 1024).toFixed(1)} MB)`;
+                        
+                        if (percentComplete >= 100) {
+                            showStatusMessage('✅ Upload complete! Processing video...', 'success');
+                            processingText.textContent = '⚙️ Preparing video for AI processing...';
+                            progressFill.style.width = '60%';
+                            progressText.textContent = 'Upload complete. Initializing AI models...';
+                        }
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.error) {
+                            showStatusMessage(`❌ Error: ${data.error}`, 'error');
+                            processingOverlay.style.display = 'none';
+                        } else {
+                            showStatusMessage('🤖 AI processing started!', 'success');
+                            
+                            // Start video feed
+                            const videoFeed = document.getElementById('video-feed');
+                            videoFeed.src = '/video_feed?t=' + Date.now();
+                            videoFeed.style.display = 'block';
+                            
+                            // Update processing status to show AI is working
+                            processingText.textContent = '🤖 AI is analyzing video...';
+                            progressFill.style.width = '70%';
+                            progressText.textContent = 'Running YOLO detection and OCR on each frame...';
+                            
+                            // Start monitoring progress every second
+                            const progressInterval = setInterval(() => {
+                                updateProcessingStatus();
+                                
+                                // Check if processing is complete
+                                fetch('/get_status')
+                                    .then(response => response.json())
+                                    .then(statusData => {
+                                        if (statusData.status === 'completed' || statusData.status === 'idle') {
+                                            clearInterval(progressInterval);
+                                            showStatusMessage('✅ Video processing completed!', 'success');
+                                            setTimeout(() => {
+                                                processingOverlay.style.display = 'none';
+                                            }, 2000);
+                                        }
+                                    });
+                            }, 1000);
+                            
+                            // Fallback: stop monitoring after 5 minutes
+                            setTimeout(() => {
+                                clearInterval(progressInterval);
+                                if (processingOverlay.style.display !== 'none') {
+                                    showStatusMessage('⚠️ Processing taking longer than expected', 'error');
+                                }
+                            }, 300000);
+                        }
+                    } else {
+                        showStatusMessage('❌ Upload failed. Please try again.', 'error');
+                        processingOverlay.style.display = 'none';
+                    }
+                });
+                
+                xhr.addEventListener('error', function() {
+                    showStatusMessage('❌ Network error during upload', 'error');
+                    processingOverlay.style.display = 'none';
+                });
+                
+                xhr.open('POST', '/upload_video');
+                xhr.send(formData);
+            }
+        });
+        
+        function testImage() {
+            const fileInput = document.getElementById('test-image-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatusMessage('Please select an image first', 'error');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                showStatusMessage('Please select a valid image file', 'error');
+                return;
+            }
+            
+            showStatusMessage('🔄 Starting image analysis...', 'success');
+            
+            const resultsDiv = document.getElementById('test-results');
+            const videoFeed = document.getElementById('video-feed');
+            const processingOverlay = document.getElementById('processing-overlay');
+
+            // Reset and hide elements before new analysis
+            processingOverlay.style.display = 'none'; // Ensure this is hidden
+            videoFeed.style.display = 'none';       // Hide current image/feed
+            videoFeed.src = '';                     // Clear src to prevent old image flash
+            resultsDiv.style.display = 'none';      // Hide previous results
+            resultsDiv.innerHTML = '<div style="color: #ccc;">🔄 Analyzing image with AI...</div>'; // Set loading message for results
+
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            console.log("Attempting to fetch /test_image");
+
+            fetch('/test_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Fetch response status:', response.status);
+                if (!response.ok) {
+                    console.error('Fetch response not OK:', response);
+                    return response.text().then(text => { // Try to get error text from body
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Full response data from /test_image:', data); // LOG FULL DATA
+                
+                processingOverlay.style.display = 'none'; // Double ensure overlay is hidden
+                
+                if (data.error) {
+                    showStatusMessage(`❌ ${data.error}`, 'error');
+                    resultsDiv.innerHTML = `<div style="color: #f44336;">❌ Error: ${data.error}</div>`;
+                    resultsDiv.style.display = 'block';
+                    videoFeed.style.display = 'none'; // Keep video feed hidden
+                } else if (data.success) {
+                    showStatusMessage('✅ Image analysis complete!', 'success');
+                    
+                    if (data.processed_image && typeof data.processed_image === 'string' && data.processed_image.startsWith('data:image')) {
+                        console.log("Processed image data received (first 100 chars):", data.processed_image.substring(0, 100));
+                        videoFeed.src = data.processed_image;
+                        videoFeed.style.display = 'block'; // IMPORTANT: Show the image feed
+                    } else {
+                        console.error("Error: 'processed_image' is missing, not a string, or not a data URL in response:", data.processed_image);
+                        videoFeed.style.display = 'none';
+                        showStatusMessage('⚠️ No valid processed image received from server.', 'error');
+                    }
+                    
+                    // Populate and show the text results div
+                    resultsDiv.style.display = 'block';
+                    if (data.count === 0) {
+                        resultsDiv.innerHTML = '<div style="color: #ff9800;">⚠️ No vehicles detected</div>';
+                    } else {
+                        let resultHtml = `<div style="color: #4CAF50; margin-bottom: 10px;">✅ Found ${data.count} vehicle(s):</div>`;
+                        data.vehicles.forEach((vehicle) => {
+                            let displayColor, icon;
+                            switch(vehicle.color) { // Ensure 'color' field is in vehicle objects from backend
+                                case 'green': displayColor = '#4CAF50'; icon = '✅'; break;
+                                case 'orange': displayColor = '#FF9800'; icon = '🚛'; break;
+                                case 'red': displayColor = '#f44336'; icon = '🚗'; break;
+                                default: displayColor = '#ccc'; icon = '❓'; // Default for unexpected color
+                            }
+                            resultHtml += `
+                                <div style="background: rgba(255,255,255,0.1); padding: 8px; margin: 5px 0; border-radius: 4px; border-left: 3px solid ${displayColor};">
+                                    <div><strong>${vehicle.status}</strong> (${(vehicle.confidence * 100).toFixed(1)}%)</div>
+                                    <div style="color: ${displayColor};">
+                                        ${icon} <strong>${vehicle.plate}</strong>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        resultsDiv.innerHTML = resultHtml;
+                    }
+                    // No automatic timeout for hiding resultsDiv, let it persist
+                } else {
+                    showStatusMessage('⚠️ Unexpected response structure from server.', 'error');
+                    resultsDiv.innerHTML = '<div style="color: #ff9800;">⚠️ Unexpected response structure</div>';
+                    resultsDiv.style.display = 'block';
+                    videoFeed.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error('Fetch or processing error in testImage:', err);
+                showStatusMessage(`❌ Analysis Error: ${err.message}`, 'error');
+                resultsDiv.innerHTML = `<div style="color: #f44336;">❌ Network or Client Error: ${err.message}</div>`;
+                resultsDiv.style.display = 'block';
+                processingOverlay.style.display = 'none';
+                videoFeed.style.display = 'none';
+            });
+        }
+        
+        // Load cameras and plates on page load
+        loadCameras(); // Automatically load cameras
+        loadPlates();
+        updateStats();
+    </script>
+</body>
+</html>
